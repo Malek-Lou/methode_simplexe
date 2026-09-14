@@ -18,6 +18,11 @@ public:
     int nombreNoeuds() const;
 
     const std::vector<double>& getNoeud(int i) const;
+
+    void setNoeud(
+        int i,
+        const std::vector<double>& point
+    );
 };
 
 #endif
