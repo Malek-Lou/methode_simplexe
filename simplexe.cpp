@@ -42,3 +42,17 @@ const std::vector<double>& Simplexe::getNoeud(int i) const
 {
     return noeuds.at(i);
 }
+void Simplexe::setNoeud(
+    int i,
+    const std::vector<double>& point)
+{
+    if (point.size() != dimension)
+    {
+        throw std::invalid_argument(
+            "Le point n'a pas la bonne dimension."
+        );
+    }
+
+    noeuds.at(i) = point;
+}
+}
