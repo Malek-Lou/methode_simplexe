@@ -1,18 +1,12 @@
-#ifndef NELDERMEAD_HPP
-#define NELDERMEAD_HPP
-
-#include "Simplexe.hpp"
-#include "Fonction.hpp"
-
-#include <vector>
-
 class NelderMead
 {
 private:
-    double alpha; // réflexion
-    double gamma; // expansion
-    double rho;   // contraction
-    double sigma; // réduction
+    double alpha;
+    double gamma;
+    double rho;
+    double sigma;
+
+    CollectionSimplexe historique;
 
 public:
     NelderMead();
@@ -23,6 +17,6 @@ public:
         int maxIterations = 1000,
         double tolerance = 1e-8
     );
-};
 
-#endif
+    const CollectionSimplexe& getHistorique() const;
+};
