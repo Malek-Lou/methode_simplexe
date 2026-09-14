@@ -2,7 +2,9 @@
 
 #include <algorithm>
 #include <cmath>
-#include <numeric>
+#include <limits>
+#include <stdexcept>
+
 
 NelderMead::NelderMead()
     : alpha(1.0),
@@ -12,318 +14,482 @@ NelderMead::NelderMead()
 {
 }
 
+
+// ==========================================================
+// Calcul du centroide
+// ==========================================================
+
+std::vector<double> NelderMead::calculerCentroide(
+    const Simplexe& simplexe,
+    std::size_t pire) const
+{
+    std::size_t dimension =
+        simplexe.getDimension();
+
+    std::size_t nombreNoeuds =
+        simplexe.nombreNoeuds();
+
+    std::vector<double> centroide(
+        dimension,
+        0.0
+    );
+
+    // On additionne tous les points
+    // sauf le pire
+    for (std::size_t i = 0;
+         i < nombreNoeuds;
+         ++i)
+    {
+        if (i == pire)
+            continue;
+
+        const std::vector<double>& point =
+            simplexe.getNoeud(i);
+
+        for (std::size_t j = 0;
+             j < dimension;
+             ++j)
+        {
+            centroide[j] += point[j];
+        }
+    }
+
+    // Dans un simplexe de dimension n,
+    // il y a n points utilisés pour le centroide
+    double nombrePoints =
+        static_cast<double>(nombreNoeuds - 1);
+
+    for (std::size_t j = 0;
+         j < dimension;
+         ++j)
+    {
+        centroide[j] /= nombrePoints;
+    }
+
+    return centroide;
+}
+
+
+// ==========================================================
+// Classement des noeuds
+// ==========================================================
+
+std::vector<std::size_t> NelderMead::classerNoeuds(
+    const Simplexe& simplexe,
+    const Fonction& fonction
+) const
+{
+    std::size_t nombreNoeuds =
+        simplexe.nombreNoeuds();
+
+    std::vector<std::size_t> indices(
+        nombreNoeuds
+    );
+
+    for (std::size_t i = 0;
+         i < nombreNoeuds;
+         ++i)
+    {
+        indices[i] = i;
+    }
+
+    std::sort(
+        indices.begin(),
+        indices.end(),
+        [&](std::size_t a, std::size_t b)
+        {
+            return fonction.evaluer(
+                simplexe.getNoeud(a)
+            )
+            <
+            fonction.evaluer(
+                simplexe.getNoeud(b)
+            );
+        }
+    );
+
+    return indices;
+}
+
+
+// ==========================================================
+// Ecart meilleur / pire
+// ==========================================================
+
+double NelderMead::calculerEcart(
+    const Simplexe& simplexe,
+    const Fonction& fonction
+) const
+{
+    std::vector<std::size_t> indices =
+        classerNoeuds(simplexe, fonction);
+
+    double meilleur =
+        fonction.evaluer(
+            simplexe.getNoeud(indices.front())
+        );
+
+    double pire =
+        fonction.evaluer(
+            simplexe.getNoeud(indices.back())
+        );
+
+    return std::abs(pire - meilleur);
+}
+
+
+// ==========================================================
+// Remplacer un noeud
+// ==========================================================
+
+void NelderMead::remplacerNoeud(
+    Simplexe& simplexe,
+    std::size_t indice,
+    const std::vector<double>& point
+) const
+{
+    simplexe.setNoeud(
+        indice,
+        point
+    );
+}
+
+
+// ==========================================================
+// ALGORITHME NELDER-MEAD
+// ==========================================================
+
 std::vector<double> NelderMead::minimiser(
     const Fonction& fonction,
     Simplexe simplexe,
     int maxIterations,
-    double tolerance)
+    double tolerance
+)
 {
+    if (simplexe.getDimension() < 1)
+    {
+        throw std::invalid_argument(
+            "La dimension doit etre positive."
+        );
+    }
+
+    // Un simplexe de dimension n
+    // doit avoir n + 1 noeuds
+    if (simplexe.nombreNoeuds()
+        != simplexe.getDimension() + 1)
+    {
+        throw std::invalid_argument(
+            "Un simplexe de dimension n doit "
+            "avoir n + 1 noeuds."
+        );
+    }
+
+
+    // ------------------------------------------
+    // Nouveau calcul -> nouvel historique
+    // ------------------------------------------
+
     historique.vider();
 
-    // Sauvegarde du simplexe de départ
+    // On sauvegarde le simplexe initial
     historique.ajouter(simplexe);
-    
-    int dimension = simplexe.getDimension();
-    int nombrePoints = simplexe.nombreNoeuds();
 
-    std::vector<double> valeurs(nombrePoints);
+
+    // ------------------------------------------
+    // Boucle principale
+    // ------------------------------------------
 
     for (int iteration = 0;
          iteration < maxIterations;
          ++iteration)
     {
-        // ==========================================
-        // 1. Évaluer tous les points
-        // ==========================================
-
-        for (int i = 0; i < nombrePoints; ++i)
-        {
-            valeurs[i] =
-                fonction.evaluer(simplexe.getNoeud(i));
-        }
-
-        // ==========================================
-        // 2. Trier les points selon f(x)
-        // ==========================================
-
-        std::vector<int> indices(nombrePoints);
-
-        std::iota(indices.begin(), indices.end(), 0);
-
-        std::sort(
-            indices.begin(),
-            indices.end(),
-            [&](int a, int b)
-            {
-                return valeurs[a] < valeurs[b];
-            }
-        );
-
-        // meilleur : plus petite valeur
-        int meilleur = indices[0];
-
-        // pire : plus grande valeur
-        int pire = indices[nombrePoints - 1];
-
-        // deuxième pire
-        int deuxiemePire = indices[nombrePoints - 2];
-
-        // ==========================================
-        // 3. Test de convergence
-        // ==========================================
-
-        double ecart =
-            valeurs[pire] - valeurs[meilleur];
-
-        // On vérifie aussi la dispersion spatiale du
-        // simplexe : deux points peuvent avoir la même
-        // valeur de f sans être proches l'un de l'autre
-        // (cas d'un simplexe initial "dégénéré").
-
-        const std::vector<double>& pointMeilleurConv =
-            simplexe.getNoeud(meilleur);
-
-        double tailleSimplexe = 0.0;
-
-        for (int i = 0; i < nombrePoints; ++i)
-        {
-            if (i == meilleur)
-                continue;
-
-            const std::vector<double>& point =
-                simplexe.getNoeud(i);
-
-            double dist2 = 0.0;
-
-            for (int j = 0; j < dimension; ++j)
-            {
-                double diff = point[j] - pointMeilleurConv[j];
-                dist2 += diff * diff;
-            }
-
-            tailleSimplexe =
-                std::max(tailleSimplexe, std::sqrt(dist2));
-        }
-
-        if (ecart < tolerance && tailleSimplexe < tolerance)
-        {
-            return simplexe.getNoeud(meilleur);
-        }
-
-        // ==========================================
-        // 4. Calcul du centre G
-        //    sans le pire point
-        // ==========================================
-
-        std::vector<double> centre(
-            dimension,
-            0.0
-        );
-
-        for (int i = 0; i < nombrePoints; ++i)
-        {
-            if (i == pire)
-                continue;
-
-            const std::vector<double>& point =
-                simplexe.getNoeud(i);
-
-            for (int j = 0; j < dimension; ++j)
-            {
-                centre[j] += point[j];
-            }
-        }
-
-        // Il y a exactement 'dimension'
-        // points dans le centre
-        for (int j = 0; j < dimension; ++j)
-        {
-            centre[j] /= dimension;
-        }
-
-        // ==========================================
-        // 5. RÉFLEXION
+        // Classement des points
         //
-        // R = G + alpha(G - W)
-        // ==========================================
+        // indices[0] = meilleur
+        // indices[... ] = intermediaires
+        // indices[n] = pire
 
-        const std::vector<double>& pointPire =
+        std::vector<std::size_t> indices =
+            classerNoeuds(
+                simplexe,
+                fonction
+            );
+
+        std::size_t meilleur =
+            indices.front();
+
+        std::size_t pire =
+            indices.back();
+
+
+        // --------------------------------------
+        // Critere d'arret
+        // --------------------------------------
+
+        if (calculerEcart(
+                simplexe,
+                fonction
+            ) < tolerance)
+        {
+            break;
+        }
+
+
+        // --------------------------------------
+        // Centroide
+        // --------------------------------------
+
+        std::vector<double> centroide =
+            calculerCentroide(
+                simplexe,
+                pire
+            );
+
+
+        // --------------------------------------
+        // REFLEXION
+        //
+        // xr = c + alpha(c - xw)
+        // --------------------------------------
+
+        const std::vector<double>& xPire =
             simplexe.getNoeud(pire);
 
-        std::vector<double> reflexion(dimension);
+        std::vector<double> reflexion(
+            simplexe.getDimension()
+        );
 
-        for (int j = 0; j < dimension; ++j)
+        for (std::size_t j = 0;
+             j < simplexe.getDimension();
+             ++j)
         {
             reflexion[j] =
-                centre[j]
+                centroide[j]
                 + alpha *
-                (centre[j] - pointPire[j]);
+                (centroide[j] - xPire[j]);
         }
 
-        double valeurReflexion =
+        double fReflexion =
             fonction.evaluer(reflexion);
 
-        // ==========================================
-        // 6. Cas où la réflexion est intéressante
-        // ==========================================
 
-        if (valeurReflexion < valeurs[meilleur])
+        // Valeur du meilleur
+        double fMeilleur =
+            fonction.evaluer(
+                simplexe.getNoeud(meilleur)
+            );
+
+
+        // Deuxieme pire
+        std::size_t deuxiemePire =
+            indices[indices.size() - 2];
+
+        double fDeuxiemePire =
+            fonction.evaluer(
+                simplexe.getNoeud(deuxiemePire)
+            );
+
+        double fPire =
+            fonction.evaluer(xPire);
+
+
+        // ==================================================
+        // CAS 1 : REFLEXION
+        // ==================================================
+
+        if (fMeilleur <= fReflexion &&
+            fReflexion < fDeuxiemePire)
         {
-            // ======================================
-            // EXPANSION
-            //
-            // E = G + gamma(R - G)
-            // ======================================
+            remplacerNoeud(
+                simplexe,
+                pire,
+                reflexion
+            );
+        }
 
-            std::vector<double> expansion(dimension);
 
-            for (int j = 0; j < dimension; ++j)
+        // ==================================================
+        // CAS 2 : EXPANSION
+        // ==================================================
+
+        else if (fReflexion < fMeilleur)
+        {
+            // xe = c + gamma(xr - c)
+
+            std::vector<double> expansion(
+                simplexe.getDimension()
+            );
+
+            for (std::size_t j = 0;
+                 j < simplexe.getDimension();
+                 ++j)
             {
                 expansion[j] =
-                    centre[j]
+                    centroide[j]
                     + gamma *
-                    (reflexion[j] - centre[j]);
+                    (reflexion[j] - centroide[j]);
             }
 
-            double valeurExpansion =
+            double fExpansion =
                 fonction.evaluer(expansion);
 
-            if (valeurExpansion < valeurReflexion)
+            if (fExpansion < fReflexion)
             {
-                // Expansion meilleure
-                simplexe.setNoeud(
+                remplacerNoeud(
+                    simplexe,
                     pire,
                     expansion
                 );
             }
             else
             {
-                // Réflexion meilleure
-                simplexe.setNoeud(
+                remplacerNoeud(
+                    simplexe,
                     pire,
                     reflexion
                 );
             }
         }
 
-        // ==========================================
-        // 7. Réflexion meilleure que le pire,
-        //    mais pas meilleure que le meilleur
-        // ==========================================
 
-        else if (valeurReflexion < valeurs[deuxiemePire])
-        {
-            // On accepte simplement la réflexion
-
-            simplexe.setNoeud(
-                pire,
-                reflexion
-            );
-        }
-
-        // ==========================================
-        // 8. CONTRACTION
-        //
-        // C = G + rho(W - G)
-        // ==========================================
+        // ==================================================
+        // CAS 3 : CONTRACTION
+        // ==================================================
 
         else
         {
-            std::vector<double> contraction(dimension);
+            // Contraction externe :
+            //
+            // xc = c + rho(xr - c)
 
-            for (int j = 0; j < dimension; ++j)
+            std::vector<double> contraction(
+                simplexe.getDimension()
+            );
+
+            if (fReflexion < fPire)
             {
-                contraction[j] =
-                    centre[j]
-                    + rho *
-                    (pointPire[j] - centre[j]);
+                for (std::size_t j = 0;
+                     j < simplexe.getDimension();
+                     ++j)
+                {
+                    contraction[j] =
+                        centroide[j]
+                        + rho *
+                        (reflexion[j]
+                         - centroide[j]);
+                }
             }
 
-            double valeurContraction =
-                fonction.evaluer(contraction);
+            // Contraction interne :
+            //
+            // xc = c + rho(xw - c)
 
-            if (valeurContraction < valeurs[pire])
+            else
             {
-                // La contraction fonctionne
+                for (std::size_t j = 0;
+                     j < simplexe.getDimension();
+                     ++j)
+                {
+                    contraction[j] =
+                        centroide[j]
+                        + rho *
+                        (xPire[j]
+                         - centroide[j]);
+                }
+            }
 
-                simplexe.setNoeud(
+
+            double fContraction =
+                fonction.evaluer(
+                    contraction
+                );
+
+
+            // La contraction fonctionne
+            if (fContraction < fPire)
+            {
+                remplacerNoeud(
+                    simplexe,
                     pire,
                     contraction
                 );
             }
 
-            // ======================================
-            // 9. RÉDUCTION
-            // ======================================
+
+            // ==================================================
+            // REDUCTION
+            // ==================================================
 
             else
             {
-                const std::vector<double>& pointMeilleur =
+                const std::vector<double>& xMeilleur =
                     simplexe.getNoeud(meilleur);
 
-                for (int i = 0;
-                     i < nombrePoints;
+                for (std::size_t i = 0;
+                     i < simplexe.nombreNoeuds();
                      ++i)
                 {
                     if (i == meilleur)
                         continue;
 
+                    std::vector<double> reduction(
+                        simplexe.getDimension()
+                    );
+
                     const std::vector<double>& point =
                         simplexe.getNoeud(i);
 
-                    std::vector<double> nouveauPoint(
-                        dimension
-                    );
-
-                    // X' = B + sigma(X - B)
-
-                    for (int j = 0;
-                         j < dimension;
+                    for (std::size_t j = 0;
+                         j < simplexe.getDimension();
                          ++j)
                     {
-                        nouveauPoint[j] =
-                            pointMeilleur[j]
+                        reduction[j] =
+                            xMeilleur[j]
                             + sigma *
-                            (point[j] - pointMeilleur[j]);
+                            (point[j]
+                             - xMeilleur[j]);
                     }
 
-                    simplexe.setNoeud(
+                    remplacerNoeud(
+                        simplexe,
                         i,
-                        nouveauPoint
+                        reduction
                     );
                 }
-          
-            
-    historique.ajouter(simplexe);}
+            }
         }
-    
+
+
+        // ------------------------------------------
+        // On sauvegarde le nouveau simplexe
+        // ------------------------------------------
+
+        historique.ajouter(simplexe);
     }
 
-    // ==========================================
-    // Nombre maximum d'itérations atteint
-    // ==========================================
 
-    for (int i = 0; i < nombrePoints; ++i)
-    {
-        valeurs[i] =
-            fonction.evaluer(
-                simplexe.getNoeud(i)
-            );
-    }
+    // ------------------------------------------
+    // Recherche du meilleur point final
+    // ------------------------------------------
 
-    int meilleur = 0;
+    std::vector<std::size_t> indicesFinal =
+        classerNoeuds(
+            simplexe,
+            fonction
+        );
 
-    for (int i = 1; i < nombrePoints; ++i)
-    {
-        if (valeurs[i] < valeurs[meilleur])
-        {
-            meilleur = i;
-        }
-    }
-
-    return simplexe.getNoeud(meilleur);
+    return simplexe.getNoeud(
+        indicesFinal.front()
+    );
 }
-const CollectionSimplexe& NelderMead::getHistorique() const
+
+
+// ==========================================================
+// Historique
+// ==========================================================
+
+const CollectionSimplexe&
+NelderMead::getHistorique() const
 {
     return historique;
 }
