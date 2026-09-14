@@ -9,13 +9,11 @@ class Rendu
 public:
     Rendu();
 
-    // Affiche l'historique dans le terminal
     void afficher(
         const CollectionSimplexe& historique
     ) const;
 
-    // Sauvegarde les coordonnées dans un fichier
-    void sauvegarder(
+    void tracer2D(
         const CollectionSimplexe& historique,
         const std::string& nomFichier
     ) const;
