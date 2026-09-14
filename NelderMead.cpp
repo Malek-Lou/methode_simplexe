@@ -323,3 +323,7 @@ std::vector<double> NelderMead::minimiser(
 
     return simplexe.getNoeud(meilleur);
 }
+const CollectionSimplexe& NelderMead::getHistorique() const
+{
+    return historique;
+}
