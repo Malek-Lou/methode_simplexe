@@ -55,4 +55,4 @@ void Simplexe::setNoeud(
 
     noeuds.at(i) = point;
 }
-}
+

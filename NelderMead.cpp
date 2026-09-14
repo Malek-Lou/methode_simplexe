@@ -70,7 +70,37 @@ std::vector<double> NelderMead::minimiser(
         double ecart =
             valeurs[pire] - valeurs[meilleur];
 
-        if (ecart < tolerance)
+        // On vérifie aussi la dispersion spatiale du
+        // simplexe : deux points peuvent avoir la même
+        // valeur de f sans être proches l'un de l'autre
+        // (cas d'un simplexe initial "dégénéré").
+
+        const std::vector<double>& pointMeilleurConv =
+            simplexe.getNoeud(meilleur);
+
+        double tailleSimplexe = 0.0;
+
+        for (int i = 0; i < nombrePoints; ++i)
+        {
+            if (i == meilleur)
+                continue;
+
+            const std::vector<double>& point =
+                simplexe.getNoeud(i);
+
+            double dist2 = 0.0;
+
+            for (int j = 0; j < dimension; ++j)
+            {
+                double diff = point[j] - pointMeilleurConv[j];
+                dist2 += diff * diff;
+            }
+
+            tailleSimplexe =
+                std::max(tailleSimplexe, std::sqrt(dist2));
+        }
+
+        if (ecart < tolerance && tailleSimplexe < tolerance)
         {
             return simplexe.getNoeud(meilleur);
         }
