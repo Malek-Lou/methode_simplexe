@@ -18,6 +18,11 @@ std::vector<double> NelderMead::minimiser(
     int maxIterations,
     double tolerance)
 {
+    historique.vider();
+
+    // Sauvegarde du simplexe de départ
+    historique.ajouter(simplexe);
+    
     int dimension = simplexe.getDimension();
     int nombrePoints = simplexe.nombreNoeuds();
 
@@ -287,8 +292,11 @@ std::vector<double> NelderMead::minimiser(
                         nouveauPoint
                     );
                 }
-            }
+          
+            
+    historique.ajouter(simplexe);}
         }
+    
     }
 
     // ==========================================
