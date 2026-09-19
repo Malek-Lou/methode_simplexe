@@ -13,6 +13,7 @@ public:
     Simplexe(int dim, const std::vector<std::vector<double>>& points);
     // Constructeur par copie
     Simplexe(const Simplexe& autre);
+    Simplexe& operator=(const Simplexe& autre);
 
     int getDimension() const;
     int nombreNoeuds() const;

@@ -55,4 +55,13 @@ void Simplexe::setNoeud(
 
     noeuds.at(i) = point;
 }
+Simplexe& Simplexe::operator=(const Simplexe& autre)
+{
+    if (this != &autre)
+    {
+        dimension = autre.dimension;
+        noeuds = autre.noeuds;
+    }
 
+    return *this;
+}

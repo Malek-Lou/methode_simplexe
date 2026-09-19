@@ -100,13 +100,13 @@ void afficherResultat(
 int main()
 {
     NelderMead nm;
-
     Rendu rendu;
 
 
     // ==================================================
     // TEST 1D
-    // f(x) = 4 - 4x + x^2
+    // f(x) = 4 - 4x + x^2 = (x - 2)^2
+    // Minimum theorique : x = 2
     // ==================================================
 
     Polynome f1(
@@ -134,7 +134,8 @@ int main()
             0.000001
         );
 
-    std::cout << "TEST 1D"
+    std::cout << std::endl;
+    std::cout << "========== TEST 1D =========="
               << std::endl;
 
     afficherResultat(
@@ -146,9 +147,36 @@ int main()
     );
 
 
+    // --------------------------------------------------
+    // Rendu du test 1D
+    // IMPORTANT : on le sauvegarde avant de lancer
+    // le test 2D car NelderMead efface son historique
+    // au debut de chaque minimisation.
+    // --------------------------------------------------
+
+    const CollectionSimplexe& historique1D =
+        nm.getHistorique();
+
+    std::cout
+        << "Nombre de simplexes 1D : "
+        << historique1D.taille()
+        << std::endl;
+
+    rendu.sauvegarder1D(
+        historique1D,
+        f1,
+        "historique1D.svg"
+    );
+
+
     // ==================================================
     // TEST 2D
-    // f(x,y) = 13 - 4x - 6y + x^2 + y^2
+    //
+    // f(x,y)
+    // = 13 - 4x - 6y + x^2 + y^2
+    // = (x - 2)^2 + (y - 3)^2
+    //
+    // Minimum theorique : (2,3)
     // ==================================================
 
     Polynome f2(
@@ -179,7 +207,8 @@ int main()
             0.000001
         );
 
-    std::cout << "TEST 2D"
+    std::cout << std::endl;
+    std::cout << "========== TEST 2D =========="
               << std::endl;
 
     afficherResultat(
@@ -191,32 +220,45 @@ int main()
     );
 
 
-    // ==================================================
-    // HISTORIQUE DU TEST 2D
-    // ==================================================
+    // --------------------------------------------------
+    // Rendu du test 2D
+    // --------------------------------------------------
 
-    const CollectionSimplexe& historique =
+    const CollectionSimplexe& historique2D =
         nm.getHistorique();
 
-    std::cout << std::endl;
+    std::cout
+        << "Nombre de simplexes 2D : "
+        << historique2D.taille()
+        << std::endl;
 
-    std::cout << "Nombre de simplexes dans "
-              << "l'historique : "
-              << historique.taille()
-              << std::endl;
+    // Affichage des simplexes dans le terminal
+   
 
-    // Affichage dans le terminal
-    rendu.afficher(historique);
-
-    // Sauvegarde dans un fichier
+    // Courbes de niveau + triangles successifs
     rendu.sauvegarder(
-        historique,
-        "historique2D.txt"
+        historique2D,
+        f2,
+        "historique2D.svg"
+    );
+
+    // Fichier utilisable avec gnuplot
+    rendu.exporterGnuplot(
+        historique2D,
+        "historique2D.dat"
     );
 
 
     // ==================================================
     // TEST 3D
+    //
+    // f(x,y,z)
+    // = 14 - 2x - 4y - 6z
+    //   + x^2 + y^2 + z^2
+    //
+    // = (x-1)^2 + (y-2)^2 + (z-3)^2
+    //
+    // Minimum theorique : (1,2,3)
     // ==================================================
 
     Polynome f3(
@@ -250,7 +292,8 @@ int main()
             0.000001
         );
 
-    std::cout << "TEST 3D"
+    std::cout << std::endl;
+    std::cout << "========== TEST 3D =========="
               << std::endl;
 
     afficherResultat(
@@ -263,5 +306,4 @@ int main()
 
 
     return 0;
-}
 }

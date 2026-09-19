@@ -459,11 +459,17 @@ std::vector<double> NelderMead::minimiser(
             }
         }
 
+<<<<<<< HEAD
 
         // ------------------------------------------
         // On sauvegarde le nouveau simplexe
         // ------------------------------------------
 
+=======
+        // Sauvegarde du simplexe courant, quelle que
+        // soit l'opération effectuée (réflexion,
+        // expansion, contraction ou réduction)
+>>>>>>> c5d1116 (Ajout des rendus 1D et 2D et copie du simplexe)
         historique.ajouter(simplexe);
     }
 
