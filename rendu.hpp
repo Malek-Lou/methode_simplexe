@@ -14,9 +14,6 @@ public:
         const CollectionSimplexe& historique
     ) const;
 
-<<<<<<< HEAD
-    void tracer2D(
-=======
     void sauvegarder1D(
         const CollectionSimplexe& historique,
         const Fonction& fonction,
@@ -24,7 +21,6 @@ public:
     ) const;
 
     void sauvegarder(
->>>>>>> c5d1116 (Ajout des rendus 1D et 2D et copie du simplexe)
         const CollectionSimplexe& historique,
         const Fonction& fonction,
         const std::string& nomFichier

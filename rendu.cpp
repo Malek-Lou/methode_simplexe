@@ -1,91 +1,46 @@
 #include "Rendu.hpp"
 
 #include <fstream>
-<<<<<<< HEAD
 #include <iostream>
-#include <stdexcept>
-#include <cstdlib>
-
-Rendu::Rendu()
-{
-}
-=======
 #include <limits>
 #include <algorithm>
 #include <vector>
 #include <utility>
->>>>>>> c5d1116 (Ajout des rendus 1D et 2D et copie du simplexe)
 
 void Rendu::afficher(
     const CollectionSimplexe& historique) const
 {
-<<<<<<< HEAD
-    for (std::size_t i = 0;
-         i < historique.taille();
-         ++i)
-=======
     std::cout << "Historique des simplexes :" << std::endl;
 
     for (size_t i = 0; i < historique.taille(); ++i)
->>>>>>> c5d1116 (Ajout des rendus 1D et 2D et copie du simplexe)
     {
         const Simplexe& s =
             historique.getSimplexe(i);
 
-<<<<<<< HEAD
-        std::cout << "\n===== ITERATION "
-                  << i
-                  << " =====\n";
-
-        for (std::size_t j = 0;
-             j < s.nombreNoeuds();
-             ++j)
-        {
-            const std::vector<double>& p =
-=======
         std::cout << "Simplexe " << i << " : ";
 
         for (int j = 0; j < s.nombreNoeuds(); ++j)
         {
             const std::vector<double>& point =
->>>>>>> c5d1116 (Ajout des rendus 1D et 2D et copie du simplexe)
                 s.getNoeud(j);
 
             std::cout << "Noeud " << j << " : ";
 
-<<<<<<< HEAD
-            for (std::size_t k = 0;
-                 k < p.size();
-                 ++k)
-=======
             for (size_t k = 0; k < point.size(); ++k)
->>>>>>> c5d1116 (Ajout des rendus 1D et 2D et copie du simplexe)
             {
-                std::cout << p[k];
+                std::cout << point[k];
 
-<<<<<<< HEAD
-                if (k + 1 < p.size())
-                    std::cout << ", ";
-            }
-
-            std::cout << '\n';
-=======
                 if (k < point.size() - 1)
                     std::cout << ", ";
             }
 
             std::cout << ") ";
->>>>>>> c5d1116 (Ajout des rendus 1D et 2D et copie du simplexe)
         }
 
         std::cout << std::endl;
     }
 }
 
-<<<<<<< HEAD
-
-void Rendu::tracer2D(
-=======
 void Rendu::sauvegarder1D(
     const CollectionSimplexe& historique,
     const Fonction& fonction,
@@ -382,7 +337,6 @@ void Rendu::sauvegarder1D(
         << std::endl;
 }
 void Rendu::sauvegarder(
->>>>>>> c5d1116 (Ajout des rendus 1D et 2D et copie du simplexe)
     const CollectionSimplexe& historique,
     const Fonction& fonction,
     const std::string& nomFichier) const
@@ -798,16 +752,10 @@ void Rendu::exporterGnuplot(
 
     if (!fichier)
     {
-<<<<<<< HEAD
-        throw std::runtime_error(
-            "Impossible de créer historique.dat"
-        );
-=======
         std::cerr << "Impossible de creer le fichier "
                   << nomFichier
                   << std::endl;
         return;
->>>>>>> c5d1116 (Ajout des rendus 1D et 2D et copie du simplexe)
     }
 
     // Un bloc par simplexe (itération), séparé par une
@@ -820,93 +768,6 @@ void Rendu::exporterGnuplot(
         const Simplexe& s =
             historique.getSimplexe(i);
 
-<<<<<<< HEAD
-        // Un simplexe 2D possède 3 noeuds
-        if (s.getDimension() != 2 ||
-            s.nombreNoeuds() != 3)
-        {
-            continue;
-        }
-
-        // Triangle
-        for (std::size_t j = 0;
-             j < 3;
-             ++j)
-        {
-            const std::vector<double>& p =
-                s.getNoeud(j);
-
-            fichier << p[0]
-                    << " "
-                    << p[1]
-                    << '\n';
-        }
-
-        // Retour au premier point pour fermer
-        // le triangle
-        const std::vector<double>& p =
-            s.getNoeud(0);
-
-        fichier << p[0]
-                << " "
-                << p[1]
-                << '\n';
-
-        // Ligne vide entre deux triangles
-        fichier << "\n\n";
-    }
-
-    fichier.close();
-
-
-    // ------------------------------------
-    // Création du script gnuplot
-    // ------------------------------------
-
-    std::ofstream script("trace.gnuplot");
-
-    if (!script)
-    {
-        throw std::runtime_error(
-            "Impossible de créer trace.gnuplot"
-        );
-    }
-
-    script << "set terminal pngcairo size 1000,800\n";
-    script << "set output '" << nomFichier << "'\n";
-
-    script << "set title 'Evolution du simplexe - Nelder-Mead'\n";
-    script << "set xlabel 'x'\n";
-    script << "set ylabel 'y'\n";
-
-    script << "set grid\n";
-    script << "set key off\n";
-    script << "set size ratio -1\n";
-
-    script << "plot 'historique.dat' "
-           << "using 1:2 "
-           << "with lines "
-           << "linewidth 2\n";
-
-    script.close();
-
-
-    // ------------------------------------
-    // Exécution de gnuplot
-    // ------------------------------------
-
-    int resultat =
-        std::system("gnuplot trace.gnuplot");
-
-    if (resultat != 0)
-    {
-        std::cerr
-            << "Erreur : gnuplot n'a pas pu "
-            << "être exécuté."
-            << std::endl;
-    }
-}"\n";
-=======
         for (int j = 0; j <= s.nombreNoeuds(); ++j)
         {
             const std::vector<double>& point =
@@ -920,7 +781,6 @@ void Rendu::exporterGnuplot(
 
         // ligne vide = séparateur de bloc pour gnuplot
         fichier << std::endl;
->>>>>>> c5d1116 (Ajout des rendus 1D et 2D et copie du simplexe)
     }
 
     fichier.close();
