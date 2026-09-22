@@ -748,7 +748,7 @@ void Rendu::exporterGnuplot(
     // Création du fichier de données
     // ------------------------------------
 
-    std::ofstream fichier("historique.dat");
+    std::ofstream fichier(nomFichier);
 
     if (!fichier)
     {

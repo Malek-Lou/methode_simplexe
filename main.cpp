@@ -5,6 +5,7 @@
 #include "NelderMead.hpp"
 #include "CollectionSimplexe.hpp"
 #include "Rendu.hpp"
+#include "FonctionSurHyperplan.hpp"
 
 
 void afficherResultat(
@@ -199,6 +200,21 @@ int main()
         }
     );
 
+    // Demonstration explicite du constructeur par copie
+    // et de l'operateur d'affectation.
+    Simplexe copieS2(s2);
+
+    Simplexe affectationS2(
+        2,
+        {
+            {0, 0},
+            {1, 0},
+            {0, 1}
+        }
+    );
+
+    affectationS2 = copieS2;
+
     std::vector<double> minimum2 =
         nm.minimiser(
             f2,
@@ -302,6 +318,72 @@ int main()
         minimum3,
         {1, 2, 3},
         f3
+    );
+
+
+    // ==================================================
+    // EXTENSION : MINIMUM SOUS CONTRAINTE
+    //
+    // Meme fonction que le test 2D :
+    // f(x,y) = (x - 2)^2 + (y - 3)^2
+    //
+    // Contrainte (hyperplan en dimension 2) :
+    // x + y = 3
+    //
+    // Sur cette droite, le minimum theorique est (1,2).
+    // ==================================================
+
+    FonctionSurHyperplan f2SousContrainte(
+        f2,
+        {1.0, 1.0},
+        3.0
+    );
+
+    // La contrainte retire un degre de liberte :
+    // on optimise donc une fonction de dimension 1.
+    Simplexe sContrainte(
+        f2SousContrainte.getDimensionReduite(),
+        {
+            {0.0},
+            {4.0}
+        }
+    );
+
+    std::vector<double> minimumParametres =
+        nm.minimiser(
+            f2SousContrainte,
+            sContrainte,
+            1000,
+            0.000001
+        );
+
+    std::vector<double> minimumContraint =
+        f2SousContrainte.reconstruire(minimumParametres);
+
+    std::cout << std::endl;
+    std::cout << "===== TEST SOUS CONTRAINTE ====="
+              << std::endl;
+    std::cout << "Contrainte : x + y = 3"
+              << std::endl;
+
+    afficherResultat(
+        "f",
+        "f(x,y) = 13 - 4x - 6y + x^2 + y^2",
+        minimumContraint,
+        {1, 2},
+        f2
+    );
+
+    std::cout << "Verification contrainte : x + y = "
+              << minimumContraint[0] + minimumContraint[1]
+              << std::endl;
+
+    // Le probleme contraint est ramene a une dimension.
+    // On peut donc aussi visualiser sa convergence.
+    rendu.sauvegarder1D(
+        nm.getHistorique(),
+        f2SousContrainte,
+        "historiqueContrainte.svg"
     );
 
 
